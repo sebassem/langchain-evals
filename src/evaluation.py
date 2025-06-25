@@ -144,7 +144,7 @@ hallucination_eval_result = hallucination_evaluator(
     inputs=messages,
     outputs=outputs,
     context=reference_outputs,
-    reference_outputs=reference_outputs
+    reference_outputs=""
 )
 
 
