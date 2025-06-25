@@ -7,7 +7,7 @@
   {
     "name": "user_prompt",
     "role": "user",
-    "prompt": "Who are the top players in foundational models?"
+    "prompt": "Who are the top 7 players in foundational models?"
   },
   {
     "name": "reference_outputs",

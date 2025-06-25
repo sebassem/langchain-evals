@@ -109,8 +109,7 @@ jobs:
           OVERALL_PASS=$(cat evaluation_results.json | jq -r '.threshold_check.overall_pass // false')
 
           if [ "$OVERALL_PASS" = "false" ]; then
-            echo "::error::❌ Evaluation thresholds not met! This PR cannot be merged until the LLM responses meet the minimum quality standards."
-            echo "::error::Please review the evaluation results and update your prompts or LLM configuration to improve the scores."
+            echo "::error::❌ Evaluation thresholds not met!
             exit 1
           else
             echo "::notice::✅ All evaluation thresholds met! This PR passes the LLM quality checks."
