@@ -5,10 +5,9 @@ param infraResourceGroupName string = 'rg-ai-dev-${namingPrefix}'
 param storageAccountName string = 'aistg${take(uniqueString(deployment().name,location,namingPrefix),5)}'
 param namingPrefix string = take(newGuid(),5)
 param models array
-
-param azureOpenAiSkuName string = 'GlobalStandard'
-param azureOpenAITokenPerMinute int = 50
 param deployAiSearch bool = false
+param githubOrganization string = 'githubOrganization'
+param githubRepo string = 'sampleRepository'
 
 module infraResourceGroup 'br/public:avm/res/resources/resource-group:0.4.1' = {
   name: 'deployment-Infra-resourceGroup'
@@ -79,6 +78,16 @@ module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-id
   name: 'deployment-user-assigned-identity'
   params: {
     name: 'msi-ai-001'
+    federatedIdentityCredentials: [
+      {
+        name: 'github_OIDC'
+        audiences: [
+              'api://AzureADTokenExchange'
+            ]
+            issuer: 'https://token.actions.githubusercontent.com'
+            subject: 'repo:${githubOrganization}/${githubRepo}:ref:refs/heads/main'
+      }
+    ]
   }
 }
 
