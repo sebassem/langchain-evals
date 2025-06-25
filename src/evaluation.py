@@ -1,0 +1,122 @@
+import os
+import json
+from dotenv import load_dotenv
+from pydantic import SecretStr
+from langchain_openai import AzureChatOpenAI
+from openevals.llm import create_llm_as_judge
+from openevals.prompts import CONCISENESS_PROMPT
+from openevals.prompts import CORRECTNESS_PROMPT
+from openevals.prompts import HALLUCINATION_PROMPT
+
+# Load environment variables from .env
+load_dotenv()
+
+# Load system prompt from JSON file
+def load_system_prompt():
+    json_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "llm.json")
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
+    return {
+        "role": data["role"],
+        "content": data["prompt"]
+    }
+
+OPENAI_API_KEY = SecretStr(os.getenv("AZURE_OPENAI_API_KEY", ""))
+
+# Create a ChatOpenAI model
+model = AzureChatOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    azure_deployment=os.getenv("AZURE_OPENAI_llm_DEPLOYMENT"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    api_key=OPENAI_API_KEY,
+    max_tokens=300,
+    temperature=0.5
+)
+
+# Create a judge ChatOpenAI model
+judge_model = AzureChatOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    azure_deployment=os.getenv("AZURE_OPENAI_judge_DEPLOYMENT"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+    api_key=OPENAI_API_KEY,
+    max_tokens=300,
+    temperature=0.5
+)
+
+# Invoke the model with a message
+messages = [
+    {
+        "role": "user",
+        "content": "Who are the top players in foundational models?"
+    },
+    load_system_prompt()
+]
+
+result = model.invoke(messages)
+
+conciseness_evaluator = create_llm_as_judge(
+    prompt=CONCISENESS_PROMPT,
+    feedback_key="correctness",
+    judge=judge_model,
+    continuous=True
+)
+
+correctness_evaluator = create_llm_as_judge(
+    prompt=CORRECTNESS_PROMPT,
+    feedback_key="correctness",
+    judge=judge_model,
+    continuous=True
+)
+
+hallucination_evaluator = create_llm_as_judge(
+    prompt=HALLUCINATION_PROMPT,
+    feedback_key="hallucination",
+    judge=judge_model,
+    continuous=True
+)
+
+reference_outputs = "The top players are OpenAI, Microsoft, Google DeepMind,Anthropic, Hugging face and Meta AI. There are many other players in the field, but these are the most prominent ones."
+
+
+outputs = result.content
+conciseness_eval_result = conciseness_evaluator(
+    inputs=messages,
+    outputs=outputs
+)
+
+correctness_eval_result = correctness_evaluator(
+    inputs=messages,
+    outputs=outputs,
+    reference_outputs=reference_outputs
+)
+
+hallucination_eval_result = hallucination_evaluator(
+    inputs=messages,
+    outputs=outputs,
+    context=reference_outputs,
+    reference_outputs=reference_outputs
+)
+
+
+print("------------------------------")
+print("LLM output: " + str(outputs))
+print("------------------------------")
+print("Conciseness Evaluation result: ")
+score = conciseness_eval_result.get("score")
+key = conciseness_eval_result.get("key")
+comments = conciseness_eval_result.get("comments")
+print(conciseness_eval_result)
+
+print("------------------------------")
+print("Correctness Evaluation result: ")
+print(correctness_eval_result)
+score = correctness_eval_result.get("score")
+key = correctness_eval_result.get("key")
+comments = correctness_eval_result.get("comments")
+
+print("------------------------------")
+print("Hallucination Evaluation result: ")
+print(hallucination_eval_result)
+score = hallucination_eval_result.get("score")
+key = hallucination_eval_result.get("key")
+comments = hallucination_eval_result.get("comments")

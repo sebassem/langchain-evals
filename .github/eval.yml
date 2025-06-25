@@ -1,0 +1,43 @@
+name: Evaluate LLM
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - data/*
+      - src/*
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_LLM_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT }}
+      AZURE_OPENAI_JUDGE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_JUDGE_DEPLOYMENT }}
+      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      # GENAI_EVALS_CONFIG_PATH: ${{ github.workspace }}/evaluate-config.json
+      # GENAI_EVALS_DATA_PATH: ${{ github.workspace }}/.github/.test_files/eval-input.jsonl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.OIDC_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.OIDC_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.OIDC_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r src/requirements.txt
+
+      - name: Run script
+        run: python src/evaluation.py
