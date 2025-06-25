@@ -33,12 +33,28 @@ def load_system_prompt():
     json_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "llm.json")
     with open(json_file_path, 'r') as file:
         data = json.load(file)
-    return {
-        "role": data["role"],
-        "content": data["prompt"]
-    }
+    # Find the system prompt in the array
+    for item in data:
+        if item["name"] == "system_prompt":
+            return {
+                "role": item["role"],
+                "content": item["prompt"]
+            }
+    raise ValueError("System prompt not found in llm.json")
 
-#OPENAI_API_KEY = SecretStr(os.getenv("AZURE_OPENAI_API_KEY", ""))
+# Load user prompt from JSON file
+def load_user_prompt():
+    json_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "llm.json")
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
+    # Find the user prompt in the array
+    for item in data:
+        if item["name"] == "user_prompt":
+            return {
+                "role": item["role"],
+                "content": item["prompt"]
+            }
+    raise ValueError("User prompt not found in llm.json")
 
 # Create a ChatOpenAI model
 model = AzureChatOpenAI(
@@ -64,10 +80,7 @@ judge_model = AzureChatOpenAI(
 
 # Invoke the model with a message
 messages = [
-    {
-        "role": "user",
-        "content": "Who are the top players in foundational models?"
-    },
+    load_user_prompt(),
     load_system_prompt()
 ]
 

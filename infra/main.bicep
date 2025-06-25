@@ -5,8 +5,8 @@ param infraResourceGroupName string = 'rg-ai-dev-${namingPrefix}'
 param storageAccountName string = 'aistg${take(uniqueString(deployment().name,location,namingPrefix),5)}'
 param namingPrefix string = take(newGuid(),5)
 param models array
-param githubOrganization string = 'githubOrganization'
-param githubRepo string = 'sampleRepository'
+param githubOrganization string
+param githubRepo string
 param subscriptionId string
 
 module infraResourceGroup 'br/public:avm/res/resources/resource-group:0.4.1' = {
@@ -96,6 +96,7 @@ module azureOpenAI 'br/public:avm/res/cognitive-services/account:0.11.0' = {
     name: 'openai${take(uniqueString(deployment().name,location,namingPrefix),5)}'
     kind: 'OpenAI'
     location: location
+    customSubDomainName: 'openai-${take(uniqueString(deployment().name,location,namingPrefix),5)}'
     publicNetworkAccess: 'Enabled'
     disableLocalAuth: false
     networkAcls: {
