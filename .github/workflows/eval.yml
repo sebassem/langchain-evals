@@ -54,11 +54,11 @@ jobs:
           RESULTS=$(cat evaluation_results.json)          # Extract values using jq for clean parsing
           LLM_OUTPUT=$(echo "$RESULTS" | jq -r '.llm_output')
           CONCISENESS_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.score // "N/A"')
-          CONCISENESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.comments // "N/A"' | head -c 100)
+          CONCISENESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.comments // "N/A"')
           CORRECTNESS_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.correctness.score // "N/A"')
-          CORRECTNESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.correctness.comments // "N/A"' | head -c 100)
+          CORRECTNESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.correctness.comments // "N/A"')
           HALLUCINATION_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.score // "N/A"')
-          HALLUCINATION_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.comments // "N/A"' | head -c 100)
+          HALLUCINATION_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.comments // "N/A"')
 
           # Create the job summary
           cat >> $GITHUB_STEP_SUMMARY << EOF
