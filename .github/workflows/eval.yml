@@ -42,43 +42,50 @@ jobs:
         id: evaluation
         run: |
           echo "Running LLM evaluation..."
-          python src/evaluation.py > evaluation_output.txt 2>&1
+          python src/evaluation.py
 
-          # Extract the JSON results section
-          echo "## Extracting JSON results..."
-          sed -n '/JSON RESULTS FOR GITHUB ACTIONS/,$ p' evaluation_output.txt | sed '1,2d' > evaluation_results.json
+          # Set evaluation results as output variables for easy access
+          echo "results_file=evaluation_results.json" >> $GITHUB_OUTPUT
 
-          # Extract the GitHub summary section
-          echo "## Extracting GitHub summary..."
-          sed -n '/GITHUB ACTIONS SUMMARY/,/JSON RESULTS FOR GITHUB ACTIONS/ p' evaluation_output.txt | sed '1,2d' | sed '$d' > github_summary.md
-
-          # Display the full output
-          echo "## Full Evaluation Output:"
-          cat evaluation_output.txt
-
-          # Set outputs for use in subsequent steps
-          echo "evaluation_completed=true" >> $GITHUB_OUTPUT
-
-      - name: Create Job Summary
-        if: steps.evaluation.outputs.evaluation_completed == 'true'
+      - name: Create Job Summary from JSON
+        if: success()
         run: |
-          echo "## LLM Evaluation Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          # Read the JSON results
+          RESULTS=$(cat evaluation_results.json)
 
-          if [ -f github_summary.md ]; then
-            cat github_summary.md >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ GitHub summary not found" >> $GITHUB_STEP_SUMMARY
-          fi
+          # Extract values using jq for clean parsing
+          LLM_OUTPUT=$(echo "$RESULTS" | jq -r '.llm_output' | head -c 200)
+          CONCISENESS_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.score // "N/A"')
+          CONCISENESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.comments // "N/A"' | head -c 100)
+          CORRECTNESS_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.correctness.score // "N/A"')
+          CORRECTNESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.correctness.comments // "N/A"' | head -c 100)
+          HALLUCINATION_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.score // "N/A"')
+          HALLUCINATION_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.comments // "N/A"' | head -c 100)
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### JSON Results" >> $GITHUB_STEP_SUMMARY
-          echo "```json" >> $GITHUB_STEP_SUMMARY
+          # Create the job summary
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # 🤖 LLM Evaluation Results
 
-          if [ -f evaluation_results.json ]; then
-            cat evaluation_results.json >> $GITHUB_STEP_SUMMARY
-          else
-            echo "JSON results not found" >> $GITHUB_STEP_SUMMARY
-          fi
+          **LLM Output:** ${LLM_OUTPUT}...
 
-          echo "```" >> $GITHUB_STEP_SUMMARY
+          ## 📊 Evaluation Scores
+
+          | Evaluation Type | Score | Comments |
+          |----------------|-------|----------|
+          | 🎯 Conciseness | ${CONCISENESS_SCORE} | ${CONCISENESS_COMMENTS} |
+          | ✅ Correctness | ${CORRECTNESS_SCORE} | ${CORRECTNESS_COMMENTS} |
+          | 🚫 Hallucination | ${HALLUCINATION_SCORE} | ${HALLUCINATION_COMMENTS} |
+
+          ### 📋 Full JSON Results
+          \`\`\`json
+          $(cat evaluation_results.json)
+          \`\`\`
+          EOF
+
+      - name: Upload Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-results
+          path: evaluation_results.json
+          retention-days: 30

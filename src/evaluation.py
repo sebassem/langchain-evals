@@ -167,7 +167,7 @@ evaluation_results = {
     }
 }
 
-# Print detailed results
+# Print detailed results for debugging
 print("------------------------------")
 print("LLM output: " + str(outputs))
 print("------------------------------")
@@ -177,45 +177,16 @@ for eval_name, eval_data in evaluation_results["evaluations"].items():
     print(f"  Score: {eval_data['score']}")
     print(f"  Key: {eval_data['key']}")
     print(f"  Comments: {eval_data['comments']}")
-    print(f"  Full Result: {eval_data['full_result']}")
     print("------------------------------")
 
-# Create GitHub Actions summary format
-def create_github_summary():
-    """Create formatted summary for GitHub Actions"""
-    summary_lines = [
-        "# LLM Evaluation Results",
-        "",
-        f"**LLM Output:** {evaluation_results['llm_output'][:200]}{'...' if len(evaluation_results['llm_output']) > 200 else ''}",
-        "",
-        "## Evaluation Scores",
-        "",
-        "| Evaluation Type | Score | Key | Comments |",
-        "|----------------|-------|-----|----------|"
-    ]
-
-    for eval_name, eval_data in evaluation_results["evaluations"].items():
-        score = eval_data['score'] if eval_data['score'] is not None else "N/A"
-        key = eval_data['key'] if eval_data['key'] is not None else "N/A"
-        comments = eval_data['comments'][:100] if eval_data['comments'] else "N/A"
-        if len(str(eval_data['comments'])) > 100:
-            comments += "..."
-
-        summary_lines.append(f"| {eval_data['type']} | {score} | {key} | {comments} |")
-
-    return "\n".join(summary_lines)
-
-# Generate and print GitHub summary
-github_summary = create_github_summary()
-print("\n" + "=" * 50)
-print("GITHUB ACTIONS SUMMARY")
-print("=" * 50)
-print(github_summary)
-
-# Export results as JSON for GitHub Actions
+# Save results as JSON file for GitHub Actions
 import json
-results_json = json.dumps(evaluation_results, indent=2)
-print("\n" + "=" * 50)
-print("JSON RESULTS FOR GITHUB ACTIONS")
-print("=" * 50)
-print(results_json)
+with open('evaluation_results.json', 'w') as f:
+    json.dump(evaluation_results, f, indent=2)
+
+print("Results saved to evaluation_results.json")
+
+# Also output the JSON to stdout for direct consumption
+print("::group::Evaluation Results JSON")
+print(json.dumps(evaluation_results, indent=2))
+print("::endgroup::")
