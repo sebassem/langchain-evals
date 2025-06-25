@@ -54,7 +54,7 @@ jobs:
         run: |
           # Read the JSON results
           RESULTS=$(cat evaluation_results.json)
-          
+
           # Extract values using jq for clean parsing
           LLM_OUTPUT=$(echo "$RESULTS" | jq -r '.llm_output')
           CONCISENESS_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.score // "N/A"')
@@ -63,7 +63,7 @@ jobs:
           CORRECTNESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.correctness.comments // "N/A"')
           HALLUCINATION_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.score // "N/A"')
           HALLUCINATION_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.comments // "N/A"')
-          
+
           # Extract threshold information
           OVERALL_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.overall_pass // false')
           CONCISENESS_THRESHOLD=$(echo "$RESULTS" | jq -r '.threshold_check.thresholds.conciseness // "N/A"')
@@ -72,7 +72,7 @@ jobs:
           CONCISENESS_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.conciseness.passed // false')
           CORRECTNESS_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.correctness.passed // false')
           HALLUCINATION_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.hallucination.passed // false')
-          
+
           # Set status emojis
           CONCISENESS_STATUS=$([ "$CONCISENESS_PASS" = "true" ] && echo "✅" || echo "❌")
           CORRECTNESS_STATUS=$([ "$CORRECTNESS_PASS" = "true" ] && echo "✅" || echo "❌")

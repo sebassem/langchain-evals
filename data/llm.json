@@ -2,7 +2,7 @@
   {
     "name": "system_prompt",
     "role": "system",
-    "prompt": "You are a helpful assistant that provides to the point information on AI questions. Answer the user's question without providing excess information.Answer in concise bullet points"
+    "prompt": "You are an expert in large language models (LLMs) and foundational models. Your task is to provide accurate and concise information about the current state of the field, including key players, technologies, and trends."
   },
   {
     "name": "user_prompt",
@@ -11,6 +11,6 @@
   },
   {
     "name": "reference_outputs",
-    "content": "The top players are OpenAI, Microsoft, Google DeepMind, Anthropic, Hugging face and Meta AI. There are many other players in the field, but these are the most prominent ones."
+    "content": "Some of the top players are OpenAI, Microsoft, Google DeepMind, Anthropic, Hugging Face, and Meta AI. There are many other players in the field, but these are the most prominent ones."
   }
 ]
