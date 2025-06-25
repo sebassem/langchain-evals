@@ -64,7 +64,6 @@ def load_user_prompt():
     json_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "llm.json")
     with open(json_file_path, 'r') as file:
         data = json.load(file)
-    # Find the user prompt in the array
     for item in data:
         if item["name"] == "user_prompt":
             return {
@@ -78,7 +77,6 @@ def load_reference_outputs():
     json_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "llm.json")
     with open(json_file_path, 'r') as file:
         data = json.load(file)
-    # Find the reference outputs in the array
     for item in data:
         if item["name"] == "reference_outputs":
             return item["content"]
