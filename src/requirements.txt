@@ -7,3 +7,6 @@ langchain-openai>=0.1.0
 
 # OpenAI Evaluation dependencies
 openevals
+
+#azure identity
+azure-identity>=1.10.0

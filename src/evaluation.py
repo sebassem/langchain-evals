@@ -7,9 +7,14 @@ from openevals.llm import create_llm_as_judge
 from openevals.prompts import CONCISENESS_PROMPT
 from openevals.prompts import CORRECTNESS_PROMPT
 from openevals.prompts import HALLUCINATION_PROMPT
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
 # Load environment variables from .env
 load_dotenv()
+
+token_provider = get_bearer_token_provider(
+    DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
+)
 
 # Load system prompt from JSON file
 def load_system_prompt():
@@ -21,14 +26,15 @@ def load_system_prompt():
         "content": data["prompt"]
     }
 
-OPENAI_API_KEY = SecretStr(os.getenv("AZURE_OPENAI_API_KEY", ""))
+#OPENAI_API_KEY = SecretStr(os.getenv("AZURE_OPENAI_API_KEY", ""))
 
 # Create a ChatOpenAI model
 model = AzureChatOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     azure_deployment=os.getenv("AZURE_OPENAI_llm_DEPLOYMENT"),
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    api_key=OPENAI_API_KEY,
+    openai_api_type="azure_ad",
+    azure_ad_token_provider=token_provider,
     max_tokens=300,
     temperature=0.5
 )
@@ -38,7 +44,8 @@ judge_model = AzureChatOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     azure_deployment=os.getenv("AZURE_OPENAI_judge_DEPLOYMENT"),
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    api_key=OPENAI_API_KEY,
+    openai_api_type="azure_ad",
+    azure_ad_token_provider=token_provider,
     max_tokens=300,
     temperature=0.5
 )
