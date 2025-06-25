@@ -20,6 +20,10 @@ jobs:
       AZURE_OPENAI_LLM_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT }}
       AZURE_OPENAI_JUDGE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_JUDGE_DEPLOYMENT }}
       AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+      # Evaluation thresholds (0.0 to 1.0 scale)
+      CONCISENESS_THRESHOLD: ${{ vars.CONCISENESS_THRESHOLD || 0.7 }}
+      CORRECTNESS_THRESHOLD: ${{ vars.CORRECTNESS_THRESHOLD || 0.8 }}
+      HALLUCINATION_THRESHOLD: ${{ vars.HALLUCINATION_THRESHOLD || 0.9 }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -46,10 +50,12 @@ jobs:
           echo "results_file=evaluation_results.json" >> $GITHUB_OUTPUT
 
       - name: Create Job Summary from JSON
-        if: success()
+        if: always()
         run: |
           # Read the JSON results
-          RESULTS=$(cat evaluation_results.json)          # Extract values using jq for clean parsing
+          RESULTS=$(cat evaluation_results.json)
+          
+          # Extract values using jq for clean parsing
           LLM_OUTPUT=$(echo "$RESULTS" | jq -r '.llm_output')
           CONCISENESS_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.score // "N/A"')
           CONCISENESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.comments // "N/A"')
@@ -57,10 +63,25 @@ jobs:
           CORRECTNESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.correctness.comments // "N/A"')
           HALLUCINATION_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.score // "N/A"')
           HALLUCINATION_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.comments // "N/A"')
+          
+          # Extract threshold information
+          OVERALL_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.overall_pass // false')
+          CONCISENESS_THRESHOLD=$(echo "$RESULTS" | jq -r '.threshold_check.thresholds.conciseness // "N/A"')
+          CORRECTNESS_THRESHOLD=$(echo "$RESULTS" | jq -r '.threshold_check.thresholds.correctness // "N/A"')
+          HALLUCINATION_THRESHOLD=$(echo "$RESULTS" | jq -r '.threshold_check.thresholds.hallucination // "N/A"')
+          CONCISENESS_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.conciseness.passed // false')
+          CORRECTNESS_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.correctness.passed // false')
+          HALLUCINATION_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.hallucination.passed // false')
+          
+          # Set status emojis
+          CONCISENESS_STATUS=$([ "$CONCISENESS_PASS" = "true" ] && echo "✅" || echo "❌")
+          CORRECTNESS_STATUS=$([ "$CORRECTNESS_PASS" = "true" ] && echo "✅" || echo "❌")
+          HALLUCINATION_STATUS=$([ "$HALLUCINATION_PASS" = "true" ] && echo "✅" || echo "❌")
+          OVERALL_STATUS=$([ "$OVERALL_PASS" = "true" ] && echo "✅ PASSED" || echo "❌ FAILED")
 
           # Create the job summary
           cat >> $GITHUB_STEP_SUMMARY << EOF
-          # 🤖 LLM Evaluation Results
+          # 🤖 LLM Evaluation Results - ${OVERALL_STATUS}
 
           ## 🎯 LLM Output
           \`\`\`
@@ -69,17 +90,83 @@ jobs:
 
           ## 📊 Evaluation Scores
 
-          | Evaluation Type | Score | Comments |
-          |----------------|-------|----------|
-          | 🎯 Conciseness | ${CONCISENESS_SCORE} | ${CONCISENESS_COMMENTS} |
-          | ✅ Correctness | ${CORRECTNESS_SCORE} | ${CORRECTNESS_COMMENTS} |
-          | 🚫 Hallucination | ${HALLUCINATION_SCORE} | ${HALLUCINATION_COMMENTS} |
+          | Evaluation Type | Score | Threshold | Status | Comments |
+          |----------------|-------|-----------|--------|----------|
+          | 🎯 Conciseness | ${CONCISENESS_SCORE} | ≥${CONCISENESS_THRESHOLD} | ${CONCISENESS_STATUS} | ${CONCISENESS_COMMENTS} |
+          | ✅ Correctness | ${CORRECTNESS_SCORE} | ≥${CORRECTNESS_THRESHOLD} | ${CORRECTNESS_STATUS} | ${CORRECTNESS_COMMENTS} |
+          | 🚫 Hallucination | ${HALLUCINATION_SCORE} | ≥${HALLUCINATION_THRESHOLD} | ${HALLUCINATION_STATUS} | ${HALLUCINATION_COMMENTS} |
 
           ### 📋 Full JSON Results
           \`\`\`json
           $(cat evaluation_results.json)
           \`\`\`
           EOF
+
+      - name: Check Evaluation Thresholds
+        if: always()
+        run: |
+          # Extract overall pass status
+          OVERALL_PASS=$(cat evaluation_results.json | jq -r '.threshold_check.overall_pass // false')
+          
+          if [ "$OVERALL_PASS" = "false" ]; then
+            echo "::error::❌ Evaluation thresholds not met! This PR cannot be merged until the LLM responses meet the minimum quality standards."
+            echo "::error::Please review the evaluation results and update your prompts or LLM configuration to improve the scores."
+            exit 1
+          else
+            echo "::notice::✅ All evaluation thresholds met! This PR passes the LLM quality checks."
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('evaluation_results.json', 'utf8'));
+            
+            // Extract data
+            const overallPass = results.threshold_check?.overall_pass || false;
+            const llmOutput = results.llm_output || 'N/A';
+            const evaluations = results.evaluations || {};
+            const thresholds = results.threshold_check?.thresholds || {};
+            const thresholdResults = results.threshold_check?.results || {};
+            
+            // Create status indicators
+            const getStatusIcon = (passed) => passed ? '✅' : '❌';
+            const getStatusText = (passed) => passed ? 'PASS' : 'FAIL';
+            const overallStatus = overallPass ? '✅ PASSED' : '❌ FAILED';
+            
+            // Build comment
+            const comment = `## 🤖 LLM Evaluation Results - ${overallStatus}
+            
+            ### 📊 Evaluation Scores
+            
+            | Evaluation Type | Score | Threshold | Status | Comments |
+            |----------------|-------|-----------|--------|----------|
+            | 🎯 Conciseness | ${evaluations.conciseness?.score || 'N/A'} | ≥${thresholds.conciseness || 'N/A'} | ${getStatusIcon(thresholdResults.conciseness?.passed)} ${getStatusText(thresholdResults.conciseness?.passed)} | ${evaluations.conciseness?.comments || 'N/A'} |
+            | ✅ Correctness | ${evaluations.correctness?.score || 'N/A'} | ≥${thresholds.correctness || 'N/A'} | ${getStatusIcon(thresholdResults.correctness?.passed)} ${getStatusText(thresholdResults.correctness?.passed)} | ${evaluations.correctness?.comments || 'N/A'} |
+            | 🚫 Hallucination | ${evaluations.hallucination?.score || 'N/A'} | ≥${thresholds.hallucination || 'N/A'} | ${getStatusIcon(thresholdResults.hallucination?.passed)} ${getStatusText(thresholdResults.hallucination?.passed)} | ${evaluations.hallucination?.comments || 'N/A'} |
+            
+            ### 🎯 LLM Output
+            \`\`\`
+            ${llmOutput}
+            \`\`\`
+            
+            ${overallPass ? 
+              '🎉 **All evaluations passed!** This PR meets the minimum quality thresholds and can be merged.' : 
+              '⚠️ **Some evaluations failed!** Please review the results above and improve the LLM responses before merging this PR.'
+            }
+            
+            ---
+            *Evaluation run: ${context.runId} | Commit: ${context.sha.substring(0, 7)}*`;
+            
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
 
       - name: Upload Results
         if: always()

@@ -12,6 +12,13 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 # Load environment variables from .env
 load_dotenv()
 
+# Define evaluation thresholds (configurable via environment variables)
+EVALUATION_THRESHOLDS = {
+    "conciseness": float(os.getenv("CONCISENESS_THRESHOLD", "0.7")),  # Default: 70%
+    "correctness": float(os.getenv("CORRECTNESS_THRESHOLD", "0.8")),  # Default: 80%
+    "hallucination": float(os.getenv("HALLUCINATION_THRESHOLD", "0.9"))  # Default: 90% (higher is better for hallucination)
+}
+
 # Validate required environment variables
 required_env_vars = [
     "AZURE_OPENAI_ENDPOINT",
@@ -179,12 +186,78 @@ for eval_name, eval_data in evaluation_results["evaluations"].items():
     print(f"  Comments: {eval_data['comments']}")
     print("------------------------------")
 
+# Check if any evaluation result is below the threshold
+for eval_name, eval_data in evaluation_results["evaluations"].items():
+    threshold = EVALUATION_THRESHOLDS.get(eval_name)
+    if threshold is not None and eval_data["score"] < threshold:
+        print(f"Warning: {eval_data['type']} score {eval_data['score']} is below the threshold {threshold}")
+
 # Save results as JSON file for GitHub Actions
 import json
 with open('evaluation_results.json', 'w') as f:
     json.dump(evaluation_results, f, indent=2)
 
 print("Results saved to evaluation_results.json")
+
+# Check evaluation thresholds and determine if they pass
+def check_thresholds(evaluation_results, thresholds):
+    """Check if evaluation scores meet minimum thresholds"""
+    threshold_results = {}
+    overall_pass = True
+
+    for eval_type, threshold in thresholds.items():
+        eval_data = evaluation_results["evaluations"].get(eval_type)
+        if eval_data and eval_data["score"] is not None:
+            score = float(eval_data["score"])
+            passed = score >= threshold
+            threshold_results[eval_type] = {
+                "score": score,
+                "threshold": threshold,
+                "passed": passed,
+                "difference": score - threshold
+            }
+            if not passed:
+                overall_pass = False
+        else:
+            # If score is missing, consider it a failure
+            threshold_results[eval_type] = {
+                "score": None,
+                "threshold": threshold,
+                "passed": False,
+                "difference": None
+            }
+            overall_pass = False
+
+    return threshold_results, overall_pass
+
+# Perform threshold checking
+threshold_results, overall_pass = check_thresholds(evaluation_results, EVALUATION_THRESHOLDS)
+
+# Add threshold results to the evaluation results
+evaluation_results["threshold_check"] = {
+    "overall_pass": overall_pass,
+    "thresholds": EVALUATION_THRESHOLDS,
+    "results": threshold_results
+}
+
+# Update the JSON file with threshold results
+with open('evaluation_results.json', 'w') as f:
+    json.dump(evaluation_results, f, indent=2)
+
+# Print threshold check results
+print("::group::Threshold Check Results")
+print(f"Overall Pass: {overall_pass}")
+for eval_type, result in threshold_results.items():
+    status = "✅ PASS" if result["passed"] else "❌ FAIL"
+    print(f"{eval_type}: {status} (Score: {result['score']}, Threshold: {result['threshold']})")
+print("::endgroup::")
+
+# Exit with appropriate code for CI/CD
+if not overall_pass:
+    print("::error::❌ Evaluation thresholds not met! Check the results above.")
+    exit(1)
+else:
+    print("::notice::✅ All evaluation thresholds met!")
 
 # Also output the JSON to stdout for direct consumption
 print("::group::Evaluation Results JSON")

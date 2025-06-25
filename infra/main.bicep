@@ -80,7 +80,7 @@ module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-id
               'api://AzureADTokenExchange'
             ]
             issuer: 'https://token.actions.githubusercontent.com'
-            subject: 'repo:${githubOrganization}/${githubRepo}:ref:refs/heads/main'
+            subject: 'repo:${githubOrganization}/${githubRepo}:pull_request'
       }
     ]
   }
