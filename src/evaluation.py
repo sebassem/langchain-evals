@@ -12,12 +12,22 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 # Load environment variables from .env
 load_dotenv()
 
-# Define evaluation thresholds (configurable via environment variables)
-EVALUATION_THRESHOLDS = {
-    "conciseness": float(os.getenv("CONCISENESS_THRESHOLD", "0.7")),  # Default: 70%
-    "correctness": float(os.getenv("CORRECTNESS_THRESHOLD", "0.8")),  # Default: 80%
-    "hallucination": float(os.getenv("HALLUCINATION_THRESHOLD", "0.7"))  # Default: 70% (higher is better for hallucination)
-}
+# Load evaluation thresholds from JSON file
+def load_evaluation_thresholds():
+    json_file_path = os.path.join(os.path.dirname(__file__), "..", "data", "llm.json")
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
+    for item in data:
+        if item["name"] == "evaluation_thresholds":
+            thresholds = item["content"].copy()
+            thresholds["conciseness"] = float(os.getenv("CONCISENESS_THRESHOLD", str(thresholds["conciseness"])))
+            thresholds["correctness"] = float(os.getenv("CORRECTNESS_THRESHOLD", str(thresholds["correctness"])))
+            thresholds["hallucination"] = float(os.getenv("HALLUCINATION_THRESHOLD", str(thresholds["hallucination"])))
+            return thresholds
+    raise ValueError("Evaluation thresholds not found in llm.json")
+
+# Define evaluation thresholds (loaded from JSON file, configurable via environment variables)
+EVALUATION_THRESHOLDS = load_evaluation_thresholds()
 
 # Validate required environment variables
 required_env_vars = [
