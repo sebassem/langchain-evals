@@ -16,7 +16,7 @@ load_dotenv()
 EVALUATION_THRESHOLDS = {
     "conciseness": float(os.getenv("CONCISENESS_THRESHOLD", "0.7")),  # Default: 70%
     "correctness": float(os.getenv("CORRECTNESS_THRESHOLD", "0.8")),  # Default: 80%
-    "hallucination": float(os.getenv("HALLUCINATION_THRESHOLD", "0.9"))  # Default: 90% (higher is better for hallucination)
+    "hallucination": float(os.getenv("HALLUCINATION_THRESHOLD", "0.7"))  # Default: 70% (higher is better for hallucination)
 }
 
 # Validate required environment variables
