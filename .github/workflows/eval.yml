@@ -38,5 +38,47 @@ jobs:
       - name: Install dependencies
         run: pip install -r src/requirements.txt
 
-      - name: Run script
-        run: python src/evaluation.py
+      - name: Run LLM Evaluation
+        id: evaluation
+        run: |
+          echo "Running LLM evaluation..."
+          python src/evaluation.py > evaluation_output.txt 2>&1
+
+          # Extract the JSON results section
+          echo "## Extracting JSON results..."
+          sed -n '/JSON RESULTS FOR GITHUB ACTIONS/,$ p' evaluation_output.txt | sed '1,2d' > evaluation_results.json
+
+          # Extract the GitHub summary section
+          echo "## Extracting GitHub summary..."
+          sed -n '/GITHUB ACTIONS SUMMARY/,/JSON RESULTS FOR GITHUB ACTIONS/ p' evaluation_output.txt | sed '1,2d' | sed '$d' > github_summary.md
+
+          # Display the full output
+          echo "## Full Evaluation Output:"
+          cat evaluation_output.txt
+
+          # Set outputs for use in subsequent steps
+          echo "evaluation_completed=true" >> $GITHUB_OUTPUT
+
+      - name: Create Job Summary
+        if: steps.evaluation.outputs.evaluation_completed == 'true'
+        run: |
+          echo "## LLM Evaluation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f github_summary.md ]; then
+            cat github_summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ GitHub summary not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### JSON Results" >> $GITHUB_STEP_SUMMARY
+          echo "```json" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f evaluation_results.json ]; then
+            cat evaluation_results.json >> $GITHUB_STEP_SUMMARY
+          else
+            echo "JSON results not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "```" >> $GITHUB_STEP_SUMMARY
