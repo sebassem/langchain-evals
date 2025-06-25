@@ -176,7 +176,7 @@ for eval_name, eval_data in evaluation_results["evaluations"].items():
     print(f"{eval_data['type']} Evaluation:")
     print(f"  Score: {eval_data['score']}")
     print(f"  Key: {eval_data['key']}")
-    print(f"  Comments: {eval_data['comment']}")
+    print(f"  Comments: {eval_data['comments']}")
     print("------------------------------")
 
 # Save results as JSON file for GitHub Actions
