@@ -2,15 +2,15 @@
   {
     "name": "system_prompt",
     "role": "system",
-    "prompt": "You are an expert in large language models (LLMs) and foundational models. Your task is to provide accurate and concise information about the current state of the field, including key players, technologies, and trends. Don't provide any unnecessary context or explanations unless specifically asked for. Focus on delivering the most relevant and up-to-date information."
+    "prompt": "You are a helpful and concise assistant. Always explain your reasoning clearly and avoid unnecessary information."
   },
   {
     "name": "user_prompt",
     "role": "user",
-    "prompt": "Who are the top 7 players in foundational models?"
+    "prompt": "What's the difference between supervised and unsupervised learning in machine learning? Provide examples of each."
   },
   {
     "name": "reference_outputs",
-    "content": "Some of the top players are OpenAI, Microsoft, Google DeepMind, Anthropic, Hugging Face, and Meta AI. There are many other players in the field, but these are the most prominent ones."
+    "content": "Supervised learning involves training a model on labeled data, where each input has a corresponding correct output. The model learns to map inputs to outputs. Example: A spam email classifier trained on emails labeled as spam or not spam.Unsupervised learning uses data without labels. The model tries to identify patterns or structures in the data. Example: Customer segmentation using clustering algorithms like K-Means, where the model groups customers based on purchasing behavior without predefined categories."
   }
 ]
