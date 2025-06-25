@@ -115,6 +115,12 @@ module azureOpenAI 'br/public:avm/res/cognitive-services/account:0.11.0' = {
         description: 'Cognitive Services Account Contributor'
         principalType: 'User'
       }
+      {
+        principalId: userAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: 'a001fd3d-188f-4b5d-821b-7da978bf7442'
+        description: 'Cognitive Services Account Contributor'
+        principalType: 'User'
+      }
     ]
   }
 }

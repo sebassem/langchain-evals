@@ -12,6 +12,18 @@ from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 # Load environment variables from .env
 load_dotenv()
 
+# Validate required environment variables
+required_env_vars = [
+    "AZURE_OPENAI_ENDPOINT",
+    "AZURE_OPENAI_LLM_DEPLOYMENT",
+    "AZURE_OPENAI_JUDGE_DEPLOYMENT",
+    "AZURE_OPENAI_API_VERSION"
+]
+
+for var in required_env_vars:
+    if not os.getenv(var):
+        raise ValueError(f"Required environment variable {var} is not set")
+
 token_provider = get_bearer_token_provider(
     DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
 )
@@ -31,7 +43,7 @@ def load_system_prompt():
 # Create a ChatOpenAI model
 model = AzureChatOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    azure_deployment=os.getenv("AZURE_OPENAI_llm_DEPLOYMENT"),
+    azure_deployment=os.getenv("AZURE_OPENAI_LLM_DEPLOYMENT"),
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
     openai_api_type="azure_ad",
     azure_ad_token_provider=token_provider,
@@ -42,7 +54,7 @@ model = AzureChatOpenAI(
 # Create a judge ChatOpenAI model
 judge_model = AzureChatOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-    azure_deployment=os.getenv("AZURE_OPENAI_judge_DEPLOYMENT"),
+    azure_deployment=os.getenv("AZURE_OPENAI_JUDGE_DEPLOYMENT"),
     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
     openai_api_type="azure_ad",
     azure_ad_token_provider=token_provider,
