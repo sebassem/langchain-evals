@@ -107,7 +107,7 @@ jobs:
         run: |
           # Extract overall pass status
           OVERALL_PASS=$(cat evaluation_results.json | jq -r '.threshold_check.overall_pass // false')
-          
+
           if [ "$OVERALL_PASS" = "false" ]; then
             echo "::error::❌ Evaluation thresholds not met! This PR cannot be merged until the LLM responses meet the minimum quality standards."
             echo "::error::Please review the evaluation results and update your prompts or LLM configuration to improve the scores."
@@ -115,58 +115,6 @@ jobs:
           else
             echo "::notice::✅ All evaluation thresholds met! This PR passes the LLM quality checks."
           fi
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const results = JSON.parse(fs.readFileSync('evaluation_results.json', 'utf8'));
-            
-            // Extract data
-            const overallPass = results.threshold_check?.overall_pass || false;
-            const llmOutput = results.llm_output || 'N/A';
-            const evaluations = results.evaluations || {};
-            const thresholds = results.threshold_check?.thresholds || {};
-            const thresholdResults = results.threshold_check?.results || {};
-            
-            // Create status indicators
-            const getStatusIcon = (passed) => passed ? '✅' : '❌';
-            const getStatusText = (passed) => passed ? 'PASS' : 'FAIL';
-            const overallStatus = overallPass ? '✅ PASSED' : '❌ FAILED';
-            
-            // Build comment
-            const comment = `## 🤖 LLM Evaluation Results - ${overallStatus}
-            
-            ### 📊 Evaluation Scores
-            
-            | Evaluation Type | Score | Threshold | Status | Comments |
-            |----------------|-------|-----------|--------|----------|
-            | 🎯 Conciseness | ${evaluations.conciseness?.score || 'N/A'} | ≥${thresholds.conciseness || 'N/A'} | ${getStatusIcon(thresholdResults.conciseness?.passed)} ${getStatusText(thresholdResults.conciseness?.passed)} | ${evaluations.conciseness?.comments || 'N/A'} |
-            | ✅ Correctness | ${evaluations.correctness?.score || 'N/A'} | ≥${thresholds.correctness || 'N/A'} | ${getStatusIcon(thresholdResults.correctness?.passed)} ${getStatusText(thresholdResults.correctness?.passed)} | ${evaluations.correctness?.comments || 'N/A'} |
-            | 🚫 Hallucination | ${evaluations.hallucination?.score || 'N/A'} | ≥${thresholds.hallucination || 'N/A'} | ${getStatusIcon(thresholdResults.hallucination?.passed)} ${getStatusText(thresholdResults.hallucination?.passed)} | ${evaluations.hallucination?.comments || 'N/A'} |
-            
-            ### 🎯 LLM Output
-            \`\`\`
-            ${llmOutput}
-            \`\`\`
-            
-            ${overallPass ? 
-              '🎉 **All evaluations passed!** This PR meets the minimum quality thresholds and can be merged.' : 
-              '⚠️ **Some evaluations failed!** Please review the results above and improve the LLM responses before merging this PR.'
-            }
-            
-            ---
-            *Evaluation run: ${context.runId} | Commit: ${context.sha.substring(0, 7)}*`;
-            
-            // Post comment
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
 
       - name: Upload Results
         if: always()
