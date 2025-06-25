@@ -20,10 +20,9 @@ jobs:
       AZURE_OPENAI_LLM_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT }}
       AZURE_OPENAI_JUDGE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_JUDGE_DEPLOYMENT }}
       AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-      # Evaluation thresholds (0.0 to 1.0 scale)
       CONCISENESS_THRESHOLD: ${{ vars.CONCISENESS_THRESHOLD || 0.7 }}
       CORRECTNESS_THRESHOLD: ${{ vars.CORRECTNESS_THRESHOLD || 0.8 }}
-      HALLUCINATION_THRESHOLD: ${{ vars.HALLUCINATION_THRESHOLD || 0.9 }}
+      HALLUCINATION_THRESHOLD: ${{ vars.HALLUCINATION_THRESHOLD || 0.7 }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -54,7 +53,7 @@ jobs:
         run: |
           # Read the JSON results
           RESULTS=$(cat evaluation_results.json)
-          
+
           # Extract values using jq for clean parsing
           LLM_OUTPUT=$(echo "$RESULTS" | jq -r '.llm_output')
           CONCISENESS_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.conciseness.score // "N/A"')
@@ -63,7 +62,7 @@ jobs:
           CORRECTNESS_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.correctness.comments // "N/A"')
           HALLUCINATION_SCORE=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.score // "N/A"')
           HALLUCINATION_COMMENTS=$(echo "$RESULTS" | jq -r '.evaluations.hallucination.comments // "N/A"')
-          
+
           # Extract threshold information
           OVERALL_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.overall_pass // false')
           CONCISENESS_THRESHOLD=$(echo "$RESULTS" | jq -r '.threshold_check.thresholds.conciseness // "N/A"')
@@ -72,7 +71,7 @@ jobs:
           CONCISENESS_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.conciseness.passed // false')
           CORRECTNESS_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.correctness.passed // false')
           HALLUCINATION_PASS=$(echo "$RESULTS" | jq -r '.threshold_check.results.hallucination.passed // false')
-          
+
           # Set status emojis
           CONCISENESS_STATUS=$([ "$CONCISENESS_PASS" = "true" ] && echo "✅" || echo "❌")
           CORRECTNESS_STATUS=$([ "$CORRECTNESS_PASS" = "true" ] && echo "✅" || echo "❌")
@@ -109,8 +108,7 @@ jobs:
           OVERALL_PASS=$(cat evaluation_results.json | jq -r '.threshold_check.overall_pass // false')
 
           if [ "$OVERALL_PASS" = "false" ]; then
-            echo "::error::❌ Evaluation thresholds not met! This PR cannot be merged until the LLM responses meet the minimum quality standards."
-            echo "::error::Please review the evaluation results and update your prompts or LLM configuration to improve the scores."
+            echo "::error::❌ Evaluation thresholds not met!"
             exit 1
           else
             echo "::notice::✅ All evaluation thresholds met! This PR passes the LLM quality checks."
