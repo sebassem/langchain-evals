@@ -20,8 +20,6 @@ jobs:
       AZURE_OPENAI_LLM_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT }}
       AZURE_OPENAI_JUDGE_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_JUDGE_DEPLOYMENT }}
       AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-      # GENAI_EVALS_CONFIG_PATH: ${{ github.workspace }}/evaluate-config.json
-      # GENAI_EVALS_DATA_PATH: ${{ github.workspace }}/.github/.test_files/eval-input.jsonl
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
