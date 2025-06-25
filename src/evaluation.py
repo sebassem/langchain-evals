@@ -148,7 +148,7 @@ def extract_eval_results(eval_result, eval_type):
         "type": eval_type,
         "score": eval_result.get("score"),
         "key": eval_result.get("key"),
-        "comments": eval_result.get("comments"),
+        "comments": eval_result.get("comment"),
         "full_result": eval_result
     }
 
@@ -176,7 +176,7 @@ for eval_name, eval_data in evaluation_results["evaluations"].items():
     print(f"{eval_data['type']} Evaluation:")
     print(f"  Score: {eval_data['score']}")
     print(f"  Key: {eval_data['key']}")
-    print(f"  Comments: {eval_data['comments']}")
+    print(f"  Comments: {eval_data['comment']}")
     print("------------------------------")
 
 # Save results as JSON file for GitHub Actions
