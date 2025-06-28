@@ -51,20 +51,6 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.18.1' = {
     }
   }
 }
-
-module storageAccountRoleAssignment 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
-  name: 'deployment-storage-account-role-assignment'
-    scope: resourceGroup(subscriptionId,infraResourceGroupName)
-  dependsOn: [
-    infraResourceGroup
-  ]
-  params: {
-    principalId: deployer().objectId
-    resourceId: storageAccount.outputs.resourceId
-    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-    principalType: 'User'
-  }
-}
 module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.0' = {
     scope: resourceGroup(subscriptionId,infraResourceGroupName)
   dependsOn: [
@@ -123,6 +109,20 @@ module azureOpenAI 'br/public:avm/res/cognitive-services/account:0.11.0' = {
         principalType: 'User'
       }
     ]
+  }
+}
+
+module storageAccountRoleAssignment 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
+  name: 'deployment-storage-account-role-assignment'
+    scope: resourceGroup(subscriptionId,infraResourceGroupName)
+  dependsOn: [
+    infraResourceGroup
+  ]
+  params: {
+    principalId: deployer().objectId
+    resourceId: storageAccount.outputs.resourceId
+    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+    principalType: 'User'
   }
 }
 
