@@ -9,7 +9,7 @@ from openevals.prompts import CORRECTNESS_PROMPT
 from openevals.prompts import HALLUCINATION_PROMPT
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 
-# Load environment variables from .env
+# Load environment variables into the script
 load_dotenv()
 
 # Load evaluation thresholds from JSON file
@@ -82,7 +82,7 @@ def load_reference_outputs():
             return item["content"]
     raise ValueError("Reference outputs not found in llm.json")
 
-# Create a ChatOpenAI model
+# Create the LLM ChatOpenAI model
 model = AzureChatOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     azure_deployment=os.getenv("AZURE_OPENAI_LLM_DEPLOYMENT"),
@@ -93,7 +93,7 @@ model = AzureChatOpenAI(
     temperature=0.5
 )
 
-# Create a judge ChatOpenAI model
+# Create the judge ChatOpenAI model
 judge_model = AzureChatOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     azure_deployment=os.getenv("AZURE_OPENAI_JUDGE_DEPLOYMENT"),

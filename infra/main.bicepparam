@@ -1,9 +1,8 @@
 using './main.bicep'
 
-param location = 'eastus2'
 param githubOrganization = 'sebassem'
 param githubRepo = 'langchain-evals'
-param subscriptionId = ''
+param subscriptionId = '2d68328e-bde2-4aeb-a5b4-1a11b4328961'
 param models = [
   {
     name: 'llm-deployment'
