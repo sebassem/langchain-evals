@@ -1,8 +1,7 @@
 targetScope = 'managementGroup'
 
-param location string = 'swedencentral'
+param location string = 'eastus2'
 param infraResourceGroupName string = 'rg-ai-dev-${namingPrefix}'
-param storageAccountName string = 'aistg${take(uniqueString(deployment().name,location,namingPrefix),5)}'
 param namingPrefix string = take(newGuid(),5)
 param models array
 param githubOrganization string
@@ -28,44 +27,7 @@ module umiRoleAssignment 'br/public:avm/ptn/authorization/role-assignment:0.2.2'
   }
 }
 
-module storageAccount 'br/public:avm/res/storage/storage-account:0.18.1' = {
-  scope: resourceGroup(subscriptionId,infraResourceGroupName)
-  dependsOn: [
-    infraResourceGroup
-  ]
-  name: 'deployment-storage-account'
-  params: {
-    name: storageAccountName
-    location: location
-    accessTier: 'Cold'
-    allowBlobPublicAccess: true
-    kind: 'BlobStorage'
-    skuName: 'Standard_LRS'
-    blobServices: {
-      containers: [
-        {
-          name: 'data'
-          publicAccess: 'None'
-        }
-      ]
-    }
-  }
-}
-
-module storageAccountRoleAssignment 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
-  name: 'deployment-storage-account-role-assignment'
-    scope: resourceGroup(subscriptionId,infraResourceGroupName)
-  dependsOn: [
-    infraResourceGroup
-  ]
-  params: {
-    principalId: deployer().objectId
-    resourceId: storageAccount.outputs.resourceId
-    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-    principalType: 'User'
-  }
-}
-module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.0' = {
+module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
     scope: resourceGroup(subscriptionId,infraResourceGroupName)
   dependsOn: [
     infraResourceGroup
@@ -73,6 +35,7 @@ module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-id
   name: 'deployment-user-assigned-identity'
   params: {
     name: 'msi-ai-001'
+    location: location
     federatedIdentityCredentials: [
       {
         name: 'github_OIDC'
@@ -120,7 +83,7 @@ module azureOpenAI 'br/public:avm/res/cognitive-services/account:0.11.0' = {
         principalId: userAssignedIdentity.outputs.principalId
         roleDefinitionIdOrName: 'a001fd3d-188f-4b5d-821b-7da978bf7442'
         description: 'Cognitive Services Account Contributor'
-        principalType: 'User'
+        principalType: 'ServicePrincipal'
       }
     ]
   }
