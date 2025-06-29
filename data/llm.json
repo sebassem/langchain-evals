@@ -7,7 +7,7 @@
   {
     "name": "user_prompt",
     "role": "user",
-    "prompt": "What's the difference between supervised and unsupervised learning in machine learning?"
+    "prompt": "What's the difference between supervised and unsupervised learning in machine learning??"
   },
   {
     "name": "reference_outputs",
