@@ -2,7 +2,7 @@
   {
     "name": "system_prompt",
     "role": "system",
-    "prompt": "You are a helpful assistant that answers questions on AI and machines learning."
+    "prompt": "You are a helpful and concise assistant. Always be straight to the point and avoid unnecessary information."
   },
   {
     "name": "user_prompt",
